@@ -1,4 +1,4 @@
-# # A Multi-Agent Audit Framework for High-Stakes Reasoning:
+# A Multi-Agent Audit Framework for High-Stakes Reasoning:
 ## Evaluation and Interpretability in Clinical Mental Health Screening [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20755233-168BC2?logo=zenodo&logoColor=white)](https://doi.org/10.5281/zenodo.20755233)
 
 <p align="center">
