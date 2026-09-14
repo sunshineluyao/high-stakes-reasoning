@@ -11,7 +11,7 @@ Before providing the review URL:
    third-party documentation.
 4. Do not upload DAIC-WOZ participant IDs, labels, transcripts, facial features,
    case-level predictions, or model-generated rationales.
-5. Replace the manuscript's artifact placeholder with the anonymous URL and
-   inspect the compiled PDF metadata.
+5. Add the anonymous URL to the manuscript's artifact statement and inspect the
+   compiled PDF metadata.
 6. Restore author, citation, DOI, and permanent repository metadata only after
    the anonymous review period.
