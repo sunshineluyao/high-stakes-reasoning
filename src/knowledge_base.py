@@ -8,38 +8,38 @@ except ImportError:
     OllamaEmbeddings = None
 
 
-PSYCHIATRIC_REFERENCES = [
+PHQ8_REFERENCE_SUMMARIES = [
     {
         "id": "phq8_interest",
-        "text": "Anhedonia reflects diminished interest or pleasure in activities and is scored according to symptom frequency over the assessment period.",
+        "text": "The PHQ-8 interest item concerns diminished interest or pleasure and is scored by reported frequency over the assessment period.",
     },
     {
         "id": "phq8_mood",
-        "text": "Depressed mood includes feeling down, hopeless, sad, or emotionally low, with severity determined by persistence and frequency.",
+        "text": "The PHQ-8 mood item concerns feeling down, depressed, or hopeless and is scored by reported frequency.",
     },
     {
         "id": "phq8_sleep",
-        "text": "Sleep disturbance includes insomnia, hypersomnia, early awakening, fragmented sleep, or difficulty maintaining restorative sleep.",
+        "text": "The PHQ-8 sleep item concerns trouble falling or staying asleep, or sleeping too much.",
     },
     {
         "id": "phq8_energy",
-        "text": "Fatigue or low energy should be scored when the transcript indicates persistent tiredness, lack of strength, or reduced capacity for daily activities.",
+        "text": "The PHQ-8 energy item concerns feeling tired or having little energy.",
     },
     {
         "id": "phq8_appetite",
-        "text": "Appetite change includes reduced appetite, overeating, weight-related eating changes, or clinically relevant shifts in food intake.",
+        "text": "The PHQ-8 appetite item concerns poor appetite or overeating.",
     },
     {
         "id": "phq8_self_esteem",
-        "text": "Low self-esteem includes guilt, worthlessness, self-blame, perceived failure, or negative self-evaluation.",
+        "text": "The PHQ-8 self-evaluation item concerns feeling bad about oneself, failure, or letting oneself or family down.",
     },
     {
         "id": "phq8_concentration",
-        "text": "Concentration difficulty includes trouble focusing, indecisiveness, slowed thinking, or difficulty sustaining attention.",
+        "text": "The PHQ-8 concentration item concerns trouble concentrating on ordinary activities.",
     },
     {
         "id": "phq8_movement",
-        "text": "Psychomotor symptoms include observable slowing, restlessness, agitation, or behavioral changes noticed by others.",
+        "text": "The PHQ-8 psychomotor item concerns moving or speaking unusually slowly, or being unusually restless.",
     },
 ]
 
@@ -90,13 +90,13 @@ class KnowledgeRetriever:
         try:
             query_embedding = self.embedding_client.embed_query(query)
             document_embeddings = self.embedding_client.embed_documents(
-                [item["text"] for item in PSYCHIATRIC_REFERENCES]
+                [item["text"] for item in PHQ8_REFERENCE_SUMMARIES]
             )
         except Exception:
             return []
 
         scored = []
-        for reference, embedding in zip(PSYCHIATRIC_REFERENCES, document_embeddings):
+        for reference, embedding in zip(PHQ8_REFERENCE_SUMMARIES, document_embeddings):
             item = dict(reference)
             item["retrieval_score"] = _cosine_similarity(query_embedding, embedding)
             item["retrieval_method"] = self.embedding_model
@@ -106,7 +106,7 @@ class KnowledgeRetriever:
 
     def _lexical_rank(self, query: str) -> List[dict]:
         scored = []
-        for reference in PSYCHIATRIC_REFERENCES:
+        for reference in PHQ8_REFERENCE_SUMMARIES:
             item = dict(reference)
             item["retrieval_score"] = _lexical_score(query, reference["text"])
             item["retrieval_method"] = "lexical_fallback"

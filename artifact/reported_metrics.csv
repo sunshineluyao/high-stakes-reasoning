@@ -1,0 +1,10 @@
+backbone,strategy,mae_mean,mae_sd,seeds,evidence_status
+LLaMA-3.1,direct,5.42,0.14,3,MANUSCRIPT_REPORTED
+LLaMA-3.1,chain_of_thought,5.26,0.11,3,MANUSCRIPT_REPORTED
+LLaMA-3.1,multi_agent,5.11,0.09,3,MANUSCRIPT_REPORTED
+Qwen2.5,direct,5.35,0.12,3,MANUSCRIPT_REPORTED
+Qwen2.5,chain_of_thought,5.18,0.10,3,MANUSCRIPT_REPORTED
+Qwen2.5,multi_agent,5.02,0.08,3,MANUSCRIPT_REPORTED
+DeepSeek-R1,direct,5.28,0.15,3,MANUSCRIPT_REPORTED
+DeepSeek-R1,chain_of_thought,5.16,0.13,3,MANUSCRIPT_REPORTED
+DeepSeek-R1,multi_agent,5.07,0.10,3,MANUSCRIPT_REPORTED
