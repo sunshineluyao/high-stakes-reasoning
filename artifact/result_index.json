@@ -5,6 +5,7 @@
     {
       "result_id": "R1_BACKBONE_COMPARISON",
       "reported_result_or_boundary": "Direct, chain-of-thought, and multi-agent MAE for three local LLM backbones",
+      "data_revision": "Restricted DAIC-WOZ snapshot; exact licensed revision is not distributed",
       "original_sources": "Restricted DAIC-WOZ participant sessions; not distributed",
       "query_code": "NOT_APPLICABLE: dataset is obtained through the official USC access process",
       "queried_data": "BLOCKED: restricted by the DAIC-WOZ access agreement",
@@ -18,7 +19,8 @@
     },
     {
       "result_id": "R2_ABLATION",
-      "reported_result_or_boundary": "Reported MAE changes after removing workflow components",
+      "reported_result_or_boundary": "Qwen2.5 7B reported MAE changes after removing workflow components",
+      "data_revision": "Restricted DAIC-WOZ snapshot; exact licensed revision is not distributed",
       "original_sources": "Restricted DAIC-WOZ participant sessions; not distributed",
       "query_code": "NOT_APPLICABLE",
       "queried_data": "BLOCKED",
@@ -33,6 +35,7 @@
     {
       "result_id": "B1_CLINICAL_BOUNDARY",
       "reported_result_or_boundary": "No claim of diagnosis, clinical utility, explanation faithfulness, fairness, or social-media transfer",
+      "data_revision": "Restricted DAIC-WOZ snapshot; exact licensed revision is not distributed",
       "original_sources": "Study design and repository audit",
       "query_code": "NOT_APPLICABLE",
       "queried_data": "NOT_APPLICABLE",

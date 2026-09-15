@@ -9,9 +9,6 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 import pandas as pd
-from langchain_core.messages import SystemMessage
-from langchain_ollama import ChatOllama
-from tqdm import tqdm
 
 from src.knowledge_base import KnowledgeRetriever
 from src.utils import load_participant_data
@@ -75,10 +72,20 @@ class ExperimentModels:
 def create_llm(model: str, temperature: float, seed: int) -> ChatOllama:
     """Construct an Ollama chat model while supporting older wrappers."""
 
+    from langchain_ollama import ChatOllama
+
     try:
         return ChatOllama(model=model, temperature=temperature, seed=seed)
     except TypeError:
         return ChatOllama(model=model, temperature=temperature)
+
+
+def system_message(content: str) -> Any:
+    """Import the inference dependency only when an LLM call is requested."""
+
+    from langchain_core.messages import SystemMessage
+
+    return SystemMessage(content=content)
 
 
 def strip_reasoning_tags(content: str) -> str:
@@ -98,6 +105,7 @@ def normalize_prediction(output: Dict[str, Any]) -> Dict[str, Any]:
     """Clamp item scores and define the total as their sum."""
 
     individual_scores = output.get("individual_scores", {})
+    rationale = output.get("rationale")
     normalized_scores: Dict[str, Dict[str, Any]] = {}
     total = 0
 
@@ -118,7 +126,7 @@ def normalize_prediction(output: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "individual_scores": normalized_scores,
         "total": total,
-        "rationale": str(output.get("rationale", "")),
+        "rationale": "" if rationale is None else str(rationale),
     }
 
 
@@ -144,7 +152,7 @@ def format_input(transcript_text: str, au_summary: str) -> str:
 
 
 def invoke_json(prompt: str, llm: ChatOllama) -> Dict[str, Any]:
-    response = llm.invoke([SystemMessage(content=prompt)])
+    response = llm.invoke([system_message(prompt)])
     return normalize_prediction(parse_json_response(response.content))
 
 
@@ -199,7 +207,7 @@ by the participant-derived input. Separate transcript evidence from facial-actio
 summaries and avoid diagnostic conclusions.
 
 {format_input(transcript_text, au_summary)}"""
-    response = llm.invoke([SystemMessage(content=prompt)])
+    response = llm.invoke([system_message(prompt)])
     return strip_reasoning_tags(response.content)
 
 
@@ -257,7 +265,7 @@ Return only valid JSON:
 
 Use REJECT only for unsupported symptoms, fabricated evidence, or unjustified
 severity. If rejected, return a corrected prediction with the original schema."""
-    response = llm.invoke([SystemMessage(content=prompt)])
+    response = llm.invoke([system_message(prompt)])
     audit_output = parse_json_response(response.content)
 
     decision = str(audit_output.get("decision", "PASS")).upper()
@@ -341,6 +349,8 @@ def append_jsonl(path: str, record: Dict[str, Any]) -> None:
 
 
 def run_experiment(args: argparse.Namespace) -> None:
+    from tqdm import tqdm
+
     os.makedirs(args.output_dir, exist_ok=True)
     split_df = pd.read_csv(args.split_csv)
     id_column, score_column = resolve_columns(split_df)

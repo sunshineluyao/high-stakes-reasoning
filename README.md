@@ -4,9 +4,8 @@
 
 This repository implements an inference-only workflow that separates evidence
 summarization, retrieval of compact PHQ-8 criterion summaries, item-level score
-estimation, and a final model-based audit. It accompanies an anonymous workshop
-submission and deliberately distinguishes implemented behavior from clinical
-validation.
+estimation, and a final model-based audit. This double-blind review snapshot
+deliberately distinguishes implemented behavior from clinical validation.
 
 ## Scientific question and reported result
 
@@ -146,7 +145,8 @@ temperature is `0.2`.
 
 ### Ablations
 
-The implemented configurations match the manuscript labels:
+The archived ablation values and the implemented configurations use the
+Qwen2.5 7B backbone:
 
 | Configuration | Perception | Retrieved knowledge | Audit |
 |---|:---:|:---:|:---:|
@@ -167,10 +167,10 @@ python -m experiments.evaluate \
 ```
 
 The evaluator reports mean MAE across seeds, bootstrap intervals over
-participant-level mean absolute errors, and optional paired tests after first
-averaging each participant across seeds. Model-generated audit flags and
-rationale-presence checks are labeled as process proxies; they are not human or
-clinical validation.
+participant-level mean absolute errors, and optional paired tests. For each
+comparison, runs are first matched by participant and seed and then averaged
+within participant. Model-generated audit flags and rationale-presence checks
+are labeled as process proxies; they are not human or clinical validation.
 
 ## Evidence and replication boundary
 
@@ -191,5 +191,5 @@ regulatory, or institutional compliance.
 
 ## License
 
-The anonymous review snapshot is provided under the MIT License. Authorship and
-permanent citation metadata will be restored after peer review.
+The anonymous review snapshot is provided under the MIT License. Public
+attribution metadata will be restored after peer review.

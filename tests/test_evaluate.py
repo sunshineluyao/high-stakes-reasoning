@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.evaluate import (
+    load_result_files,
     paired_t_test,
     pairwise_comparisons,
     participant_error_table,
@@ -52,6 +53,38 @@ class EvaluationTests(unittest.TestCase):
     def test_pairwise_test_uses_two_participants_not_six_seed_rows(self):
         comparisons = pairwise_comparisons(fixture_results())
         self.assertEqual(int(comparisons.iloc[0]["paired_participants"]), 2)
+        self.assertEqual(int(comparisons.iloc[0]["matched_runs"]), 6)
+
+    def test_pairwise_test_excludes_an_unmatched_seed_run(self):
+        results = fixture_results()
+        unmatched_direct = (
+            (results["configuration"] == "direct")
+            & (results["participant_id"] == 1)
+            & (results["seed"] == 33)
+        )
+        results = results.loc[~unmatched_direct].copy()
+        unmatched_multi = (
+            (results["configuration"] == "multi")
+            & (results["participant_id"] == 1)
+            & (results["seed"] == 33)
+        )
+        results.loc[unmatched_multi, "predicted_score"] = 999
+
+        comparison = pairwise_comparisons(results).iloc[0]
+        self.assertEqual(int(comparison["matched_runs"]), 5)
+        self.assertAlmostEqual(float(comparison["left_participant_mean_mae"]), 2.0)
+        self.assertAlmostEqual(float(comparison["right_participant_mean_mae"]), 1.0)
+
+    def test_all_failed_configuration_returns_zero_completed_runs(self):
+        failed = fixture_results().query("configuration == 'direct'").copy()
+        failed["predicted_score"] = np.nan
+        summary = summarize_results(failed, bootstrap_iterations=10).iloc[0]
+        self.assertEqual(int(summary["participant_count"]), 0)
+        self.assertEqual(int(summary["completed_runs"]), 0)
+
+    def test_missing_result_input_raises(self):
+        with self.assertRaises(FileNotFoundError):
+            load_result_files(["path-that-does-not-exist/case_results.csv"])
 
     def test_constant_nonzero_paired_difference_is_not_reported_as_null(self):
         result = paired_t_test(np.array([2.0, 2.0]), np.array([1.0, 1.0]))

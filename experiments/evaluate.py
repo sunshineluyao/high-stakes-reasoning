@@ -25,6 +25,21 @@ REQUIRED_COLUMNS = {
     "predicted_score",
 }
 
+PARTICIPANT_ERROR_COLUMNS = [
+    "participant_id",
+    "true_score",
+    "participant_mean_prediction",
+    "participant_mean_absolute_error",
+    "completed_seeds",
+]
+
+MATCHED_ERROR_COLUMNS = [
+    "participant_id",
+    "left_participant_mean_absolute_error",
+    "right_participant_mean_absolute_error",
+    "matched_seeds",
+]
+
 
 def validate_schema(results: pd.DataFrame) -> None:
     missing = sorted(REQUIRED_COLUMNS.difference(results.columns))
@@ -92,6 +107,8 @@ def paired_t_test(left: np.ndarray, right: np.ndarray) -> Dict[str, float]:
 
 def participant_error_table(group: pd.DataFrame) -> pd.DataFrame:
     values = group.dropna(subset=["predicted_score"]).copy()
+    if values.empty:
+        return pd.DataFrame(columns=PARTICIPANT_ERROR_COLUMNS)
     values["absolute_error"] = (values["true_score"] - values["predicted_score"]).abs()
     return (
         values.groupby("participant_id", as_index=False)
@@ -101,6 +118,44 @@ def participant_error_table(group: pd.DataFrame) -> pd.DataFrame:
             participant_mean_absolute_error=("absolute_error", "mean"),
             completed_seeds=("seed", "nunique"),
         )
+    )
+
+
+def matched_participant_error_table(
+    left_group: pd.DataFrame,
+    right_group: pd.DataFrame,
+) -> pd.DataFrame:
+    """Aggregate errors only after matching participant--seed runs."""
+
+    columns = ["participant_id", "seed", "true_score", "predicted_score"]
+    left = left_group.dropna(subset=["predicted_score"])[columns]
+    right = right_group.dropna(subset=["predicted_score"])[columns]
+    matched = left.merge(
+        right,
+        on=["participant_id", "seed"],
+        suffixes=("_left", "_right"),
+        validate="one_to_one",
+    )
+    if matched.empty:
+        return pd.DataFrame(columns=MATCHED_ERROR_COLUMNS)
+
+    score_matches = np.isclose(
+        matched["true_score_left"].to_numpy(dtype=float),
+        matched["true_score_right"].to_numpy(dtype=float),
+    )
+    if not bool(score_matches.all()):
+        raise ValueError("True scores differ for matched participant--seed runs.")
+
+    matched["left_absolute_error"] = (
+        matched["true_score_left"] - matched["predicted_score_left"]
+    ).abs()
+    matched["right_absolute_error"] = (
+        matched["true_score_right"] - matched["predicted_score_right"]
+    ).abs()
+    return matched.groupby("participant_id", as_index=False).agg(
+        left_participant_mean_absolute_error=("left_absolute_error", "mean"),
+        right_participant_mean_absolute_error=("right_absolute_error", "mean"),
+        matched_seeds=("seed", "nunique"),
     )
 
 
@@ -129,8 +184,16 @@ def compute_process_proxies(group: pd.DataFrame) -> Dict[str, float]:
         if not audited.empty and "audit_unsupported_inference" in audited
         else float("nan")
     )
-    reference_text = valid.get("knowledge_reference_ids", pd.Series("", index=valid.index)).fillna("").astype(str)
-    rationale_text = valid.get("rationale", pd.Series("", index=valid.index)).fillna("").astype(str)
+    reference_text = (
+        valid.get("knowledge_reference_ids", pd.Series("", index=valid.index))
+        .fillna("")
+        .astype(str)
+    )
+    rationale_text = (
+        valid.get("rationale", pd.Series("", index=valid.index))
+        .fillna("")
+        .astype(str)
+    )
     prediction_sd = valid.groupby("participant_id")["predicted_score"].std(ddof=1)
 
     return {
@@ -138,7 +201,9 @@ def compute_process_proxies(group: pd.DataFrame) -> Dict[str, float]:
         "audit_unsupported_rate_model_proxy": audit_unsupported,
         "knowledge_reference_coverage_proxy": float(reference_text.str.len().gt(0).mean()),
         "rationale_presence_proxy": float(rationale_text.str.strip().str.len().gt(0).mean()),
-        "mean_prediction_sd_across_seeds": float(prediction_sd.dropna().mean()) if prediction_sd.notna().any() else 0.0,
+        "mean_prediction_sd_across_seeds": (
+            float(prediction_sd.dropna().mean()) if prediction_sd.notna().any() else 0.0
+        ),
     }
 
 
@@ -172,26 +237,30 @@ def summarize_results(results: pd.DataFrame, bootstrap_iterations: int) -> pd.Da
 
 def pairwise_comparisons(results: pd.DataFrame) -> pd.DataFrame:
     validate_schema(results)
-    valid = results.dropna(subset=["predicted_score"]).copy()
-    tables = {
-        configuration: participant_error_table(group)[
-            ["participant_id", "participant_mean_absolute_error"]
-        ]
-        for configuration, group in valid.groupby("configuration")
+    groups = {
+        configuration: group.copy()
+        for configuration, group in results.groupby("configuration")
     }
 
     rows = []
-    for left, right in combinations(sorted(tables), 2):
-        merged = tables[left].merge(tables[right], on="participant_id", suffixes=("_left", "_right"))
-        left_errors = merged["participant_mean_absolute_error_left"].to_numpy(dtype=float)
-        right_errors = merged["participant_mean_absolute_error_right"].to_numpy(dtype=float)
+    for left, right in combinations(sorted(groups), 2):
+        matched = matched_participant_error_table(groups[left], groups[right])
+        left_errors = matched["left_participant_mean_absolute_error"].to_numpy(dtype=float)
+        right_errors = matched["right_participant_mean_absolute_error"].to_numpy(dtype=float)
         rows.append(
             {
                 "left_configuration": left,
                 "right_configuration": right,
-                "paired_participants": int(len(merged)),
-                "left_participant_mean_mae": float(left_errors.mean()) if len(merged) else float("nan"),
-                "right_participant_mean_mae": float(right_errors.mean()) if len(merged) else float("nan"),
+                "paired_participants": int(len(matched)),
+                "matched_runs": int(matched["matched_seeds"].sum()) if len(matched) else 0,
+                "minimum_matched_seeds_per_participant": (
+                    int(matched["matched_seeds"].min()) if len(matched) else 0
+                ),
+                "maximum_matched_seeds_per_participant": (
+                    int(matched["matched_seeds"].max()) if len(matched) else 0
+                ),
+                "left_participant_mean_mae": float(left_errors.mean()) if len(matched) else float("nan"),
+                "right_participant_mean_mae": float(right_errors.mean()) if len(matched) else float("nan"),
                 **paired_t_test(left_errors, right_errors),
             }
         )
@@ -202,10 +271,9 @@ def load_result_files(input_paths: List[str]) -> pd.DataFrame:
     frames = []
     for path in input_paths:
         csv_path = os.path.join(path, "case_results.csv") if os.path.isdir(path) else path
-        if os.path.exists(csv_path):
-            frames.append(pd.read_csv(csv_path))
-    if not frames:
-        raise ValueError("No case result files were found.")
+        if not os.path.isfile(csv_path):
+            raise FileNotFoundError(f"Required case result file not found: {csv_path}")
+        frames.append(pd.read_csv(csv_path))
     results = pd.concat(frames, ignore_index=True)
     validate_schema(results)
     return results

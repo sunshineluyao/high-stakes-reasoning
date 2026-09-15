@@ -13,5 +13,5 @@ Before providing the review URL:
    case-level predictions, or model-generated rationales.
 5. Add the anonymous URL to the manuscript's artifact statement and inspect the
    compiled PDF metadata.
-6. Restore author, citation, DOI, and permanent repository metadata only after
-   the anonymous review period.
+6. Restore public attribution and archival metadata only after the anonymous
+   review period.
