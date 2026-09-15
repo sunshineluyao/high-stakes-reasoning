@@ -1,0 +1,51 @@
+{
+  "artifact_status": "anonymous_review_snapshot",
+  "data_revision": "DAIC-WOZ under the researcher's authorized local copy",
+  "results": [
+    {
+      "result_id": "R1_BACKBONE_COMPARISON",
+      "reported_result_or_boundary": "Direct, chain-of-thought, and multi-agent MAE for three local LLM backbones",
+      "data_revision": "Restricted DAIC-WOZ snapshot; exact licensed revision is not distributed",
+      "original_sources": "Restricted DAIC-WOZ participant sessions; not distributed",
+      "query_code": "NOT_APPLICABLE: dataset is obtained through the official USC access process",
+      "queried_data": "BLOCKED: restricted by the DAIC-WOZ access agreement",
+      "process_code": ["src/utils.py", "src/data_split.py"],
+      "processed_data": "BLOCKED: generated locally from restricted participant records",
+      "analysis_code": ["experiments/runner.py", "experiments/evaluate.py"],
+      "result_outputs": "artifact/reported_metrics.csv",
+      "commands": "README.md#running-the-reported-comparison-design",
+      "evidence_status": "MANUSCRIPT_REPORTED",
+      "interpretation_boundary": "Aggregate table transcribed from the manuscript; case-level outputs were unavailable for independent reproduction"
+    },
+    {
+      "result_id": "R2_ABLATION",
+      "reported_result_or_boundary": "Qwen2.5 7B reported MAE changes after removing workflow components",
+      "data_revision": "Restricted DAIC-WOZ snapshot; exact licensed revision is not distributed",
+      "original_sources": "Restricted DAIC-WOZ participant sessions; not distributed",
+      "query_code": "NOT_APPLICABLE",
+      "queried_data": "BLOCKED",
+      "process_code": ["src/utils.py", "src/data_split.py"],
+      "processed_data": "BLOCKED",
+      "analysis_code": ["experiments/runner.py", "experiments/evaluate.py"],
+      "result_outputs": "artifact/reported_ablations.csv",
+      "commands": "README.md#ablations",
+      "evidence_status": "MANUSCRIPT_REPORTED",
+      "interpretation_boundary": "Configurations are implemented, but the released snapshot does not include case-level outputs"
+    },
+    {
+      "result_id": "B1_CLINICAL_BOUNDARY",
+      "reported_result_or_boundary": "No claim of diagnosis, clinical utility, explanation faithfulness, fairness, or social-media transfer",
+      "data_revision": "Restricted DAIC-WOZ snapshot; exact licensed revision is not distributed",
+      "original_sources": "Study design and repository audit",
+      "query_code": "NOT_APPLICABLE",
+      "queried_data": "NOT_APPLICABLE",
+      "process_code": "NOT_APPLICABLE",
+      "processed_data": "NOT_APPLICABLE",
+      "analysis_code": "NOT_APPLICABLE",
+      "result_outputs": "README.md#scientific-question-and-reported-result",
+      "commands": "NOT_APPLICABLE",
+      "evidence_status": "BOUNDED",
+      "interpretation_boundary": "The study is an inference-only benchmark evaluation on one fixed held-out split"
+    }
+  ]
+}

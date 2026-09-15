@@ -1,12 +1,23 @@
-# Default pipeline configuration
-models:
-  perception: llama3.1:8b
-  knowledge: nomic-embed-text
-  reasoning: deepseek-r1:8b
-  audit: qwen2.5:7b
+study:
+  task: phq8_severity_estimation
+  input_modality: transcript_au_summary
+  split_counts:
+    development: 128
+    validation: 19
+    test: 37
+  split_assignment: fixed_authorized_metadata_with_sha256_verification
+  seeds: [11, 22, 33]
 
-pipeline:
-  temperature_perception: 0.1
-  temperature_reasoning: 0.2
-  temperature_audit: 0.0
-  rag_top_k: 3
+inference:
+  backbones:
+    - llama3.1:8b
+    - qwen2.5:7b
+    - deepseek-r1:8b
+  generative_temperature: 0.2
+  embedding_model: nomic-embed-text
+  retrieval_top_k: 3
+
+evaluation:
+  primary_metric: mean_absolute_error
+  statistical_unit: participant
+  aggregate_status: manuscript_reported_not_independently_reproduced
