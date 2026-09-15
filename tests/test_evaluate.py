@@ -55,7 +55,7 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(int(comparisons.iloc[0]["paired_participants"]), 2)
         self.assertEqual(int(comparisons.iloc[0]["matched_runs"]), 6)
 
-    def test_pairwise_test_excludes_an_unmatched_seed_run(self):
+    def test_pairwise_test_rejects_an_unmatched_seed_run(self):
         results = fixture_results()
         unmatched_direct = (
             (results["configuration"] == "direct")
@@ -63,24 +63,14 @@ class EvaluationTests(unittest.TestCase):
             & (results["seed"] == 33)
         )
         results = results.loc[~unmatched_direct].copy()
-        unmatched_multi = (
-            (results["configuration"] == "multi")
-            & (results["participant_id"] == 1)
-            & (results["seed"] == 33)
-        )
-        results.loc[unmatched_multi, "predicted_score"] = 999
+        with self.assertRaises(ValueError):
+            pairwise_comparisons(results)
 
-        comparison = pairwise_comparisons(results).iloc[0]
-        self.assertEqual(int(comparison["matched_runs"]), 5)
-        self.assertAlmostEqual(float(comparison["left_participant_mean_mae"]), 2.0)
-        self.assertAlmostEqual(float(comparison["right_participant_mean_mae"]), 1.0)
-
-    def test_all_failed_configuration_returns_zero_completed_runs(self):
+    def test_all_failed_configuration_fails_closed(self):
         failed = fixture_results().query("configuration == 'direct'").copy()
         failed["predicted_score"] = np.nan
-        summary = summarize_results(failed, bootstrap_iterations=10).iloc[0]
-        self.assertEqual(int(summary["participant_count"]), 0)
-        self.assertEqual(int(summary["completed_runs"]), 0)
+        with self.assertRaises(ValueError):
+            summarize_results(failed, bootstrap_iterations=10)
 
     def test_missing_result_input_raises(self):
         with self.assertRaises(FileNotFoundError):

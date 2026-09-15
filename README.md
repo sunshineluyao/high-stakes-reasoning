@@ -71,20 +71,25 @@ its access agreement. Participant identifiers, labels, transcripts, facial
 features, and case-level rationales are intentionally excluded from this review
 artifact.
 
-After authorized access, create the split locally:
+After authorized access, provide the three fixed split-metadata files used by
+the study and validate them locally:
 
 ```bash
 python -m src.data_split \
-  --index-csv /path/to/data_split_Depression_AVEC2017.csv \
+  --development-csv /path/to/fixed_development.csv \
+  --validation-csv /path/to/fixed_validation.csv \
+  --test-csv /path/to/fixed_test.csv \
   --data-root /path/to/DAIC-WOZ \
   --require-files \
-  --output-dir data/splits \
-  --seed 42
+  --output-dir data/splits
 ```
 
-The expected 184-session split contains 128 development, 19 validation, and 37
-held-out test sessions. The script records counts, the seed, and a SHA-256 hash
-of the authorized local index without publishing participant-level records.
+The fixed 184-session assignment contains 128 development, 19 validation, and
+37 held-out test sessions. The script does not reshuffle or repartition them: it
+checks the archived SHA-256 fingerprints in `src/data_split.py`, verifies that
+the partitions do not overlap, and writes a local manifest. The assignment
+files are not distributed because they contain participant identifiers and
+labels.
 
 ## Installation and offline checks
 
@@ -107,7 +112,7 @@ ollama pull nomic-embed-text
 
 ## Running the reported comparison design
 
-Use an authorized split CSV containing `Participant_ID` and `PHQ8_Score`.
+Use the validated local test CSV containing `Participant_ID` and `PHQ8_Score`.
 The examples below show Qwen2.5; replace `--backbone` for the other conditions.
 
 ```bash
@@ -166,11 +171,13 @@ python -m experiments.evaluate \
   --output-dir results_summary
 ```
 
-The evaluator reports mean MAE across seeds, bootstrap intervals over
-participant-level mean absolute errors, and optional paired tests. For each
-comparison, runs are first matched by participant and seed and then averaged
-within participant. Model-generated audit flags and rationale-presence checks
-are labeled as process proxies; they are not human or clinical validation.
+The evaluator refuses missing predictions, duplicate runs, or unequal
+participant--seed panels. It reports mean MAE across seeds, bootstrap intervals
+over participant-level mean absolute errors, and optional paired tests. For
+each comparison, runs are first matched by participant and seed and then
+averaged within participant. Model-generated audit flags and rationale-presence
+checks are labeled as process proxies; they are not human or clinical
+validation.
 
 ## Evidence and replication boundary
 

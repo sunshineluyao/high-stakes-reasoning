@@ -5,6 +5,7 @@ study:
     development: 128
     validation: 19
     test: 37
+  split_assignment: fixed_authorized_metadata_with_sha256_verification
   seeds: [11, 22, 33]
 
 inference:

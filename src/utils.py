@@ -20,16 +20,16 @@ def _read_transcript(path: Path) -> pd.DataFrame:
 
 def _summarize_action_units(path: Path) -> str:
     action_units = pd.read_csv(path)
-    if "success" not in action_units.columns:
-        raise ValueError(f"Action-unit file {path.name} is missing the success column")
+    required_columns = {"success", "AU12_r", "AU04_c"}
+    missing = sorted(required_columns.difference(action_units.columns))
+    if missing:
+        raise ValueError(f"Action-unit file {path.name} is missing columns {missing}")
     valid = action_units[action_units["success"] == 1]
     if valid.empty:
         raise ValueError(f"Action-unit file {path.name} contains no successfully tracked frames")
 
-    au12_mean = float(valid["AU12_r"].mean()) if "AU12_r" in valid.columns else 0.0
-    au04_frequency = (
-        float(valid["AU04_c"].eq(1).mean()) if "AU04_c" in valid.columns else 0.0
-    )
+    au12_mean = float(valid["AU12_r"].mean())
+    au04_frequency = float(valid["AU04_c"].eq(1).mean())
     return (
         f"AU12 smile intensity mean: {au12_mean:.2f}; "
         f"AU04 brow-furrow activation frequency: {au04_frequency:.2%}"

@@ -47,6 +47,40 @@ def validate_schema(results: pd.DataFrame) -> None:
         raise ValueError(f"Missing required result columns: {missing}")
 
 
+def validate_complete_panel(results: pd.DataFrame) -> None:
+    """Fail closed when a matched comparison panel is incomplete or duplicated."""
+
+    validate_schema(results)
+    key_columns = ["configuration", "participant_id", "seed"]
+    if results[key_columns].isna().any(axis=None):
+        raise ValueError("Configuration, participant, and seed keys must not be missing.")
+    if results.duplicated(subset=key_columns).any():
+        raise ValueError("Duplicate configuration--participant--seed result rows found.")
+
+    incomplete = results["true_score"].isna() | results["predicted_score"].isna()
+    if incomplete.any():
+        counts = results.loc[incomplete].groupby("configuration").size().to_dict()
+        raise ValueError(
+            "Incomplete predictions cannot be summarized; failed rows by configuration: "
+            f"{counts}"
+        )
+
+    panels = {
+        configuration: set(zip(group["participant_id"], group["seed"]))
+        for configuration, group in results.groupby("configuration")
+    }
+    if not panels:
+        raise ValueError("No configurations were found in the result panel.")
+    reference_name = sorted(panels)[0]
+    reference_panel = panels[reference_name]
+    for configuration, panel in panels.items():
+        if panel != reference_panel:
+            raise ValueError(
+                "Configuration panels differ in participant--seed coverage: "
+                f"{reference_name} versus {configuration}."
+            )
+
+
 def mean_absolute_error(values: pd.DataFrame) -> float:
     return float((values["true_score"] - values["predicted_score"]).abs().mean())
 
@@ -208,7 +242,7 @@ def compute_process_proxies(group: pd.DataFrame) -> Dict[str, float]:
 
 
 def summarize_results(results: pd.DataFrame, bootstrap_iterations: int) -> pd.DataFrame:
-    validate_schema(results)
+    validate_complete_panel(results)
     summaries = []
     for configuration, group in results.groupby("configuration"):
         valid = group.dropna(subset=["predicted_score"]).copy()
@@ -236,7 +270,7 @@ def summarize_results(results: pd.DataFrame, bootstrap_iterations: int) -> pd.Da
 
 
 def pairwise_comparisons(results: pd.DataFrame) -> pd.DataFrame:
-    validate_schema(results)
+    validate_complete_panel(results)
     groups = {
         configuration: group.copy()
         for configuration, group in results.groupby("configuration")

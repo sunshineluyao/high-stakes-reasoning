@@ -270,7 +270,11 @@ severity. If rejected, return a corrected prediction with the original schema.""
 
     decision = str(audit_output.get("decision", "PASS")).upper()
     corrected = audit_output.get("corrected_prediction")
-    if decision == "REJECT" and isinstance(corrected, dict):
+    if decision == "REJECT":
+        if not isinstance(corrected, dict) or not isinstance(
+            corrected.get("individual_scores"), dict
+        ):
+            raise ValueError("A REJECT audit decision requires a valid corrected prediction.")
         audit_output["corrected_prediction"] = normalize_prediction(corrected)
     else:
         audit_output["corrected_prediction"] = None
@@ -279,7 +283,8 @@ severity. If rejected, return a corrected prediction with the original schema.""
     audit_output["unsupported_inference"] = bool(
         audit_output.get("unsupported_inference", decision == "REJECT")
     )
-    audit_output["reason"] = str(audit_output.get("reason", ""))
+    reason = audit_output.get("reason")
+    audit_output["reason"] = "" if reason is None else str(reason)
     return audit_output
 
 
